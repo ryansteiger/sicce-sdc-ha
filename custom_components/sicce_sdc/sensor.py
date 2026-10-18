@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, MODEL_LABELS, MODEL_MAX_GPH
-from .entity import SicceEntity, device_display_name, live_power
+from .entity import SicceEntity, active_alerts, device_display_name, live_power
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -18,6 +18,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     for device_id in data["coordinator"].data:
         entities.append(SicceTempSensor(data["coordinator"], data["client"], device_id))
         entities.append(SicceModeSensor(data["coordinator"], data["client"], device_id))
+        entities.append(SicceAlertSensor(data["coordinator"], data["client"], device_id))
         model_key = models.get(str(device_id))
         if model_key in MODEL_MAX_GPH:
             entities.append(SicceFlowSensor(data["coordinator"], data["client"], device_id, model_key))
@@ -119,3 +120,25 @@ class SicceFlowSensor(SicceEntity, SensorEntity):
             "rated_max_gph": MODEL_MAX_GPH[self._model_key],
             "note": "Estimate from rated max flow at zero head; actual flow depends on plumbing head height.",
         }
+
+
+class SicceAlertSensor(SicceEntity, SensorEntity):
+    """What is wrong, in words: 'OK', or the active alerts by name
+    (e.g. 'High Temperature', 'Dry Run'). The pump raises the flags;
+    this names them. The Problem binary sensor stays for automations."""
+
+    _attr_icon = "mdi:alarm-light-outline"
+
+    def __init__(self, coordinator, client, device_id: int):
+        super().__init__(coordinator, client, device_id)
+        self._attr_unique_id = f"sicce_{device_id}_alerts"
+        self._attr_name = f"{device_display_name(self._dev)} Alerts"
+
+    @property
+    def native_value(self) -> str:
+        labels = active_alerts(self._dev)
+        return ", ".join(labels) if labels else "OK"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"active_alerts": active_alerts(self._dev)}

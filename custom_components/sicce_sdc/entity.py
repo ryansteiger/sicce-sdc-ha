@@ -21,6 +21,24 @@ ALERT_FIELDS = [
     "alert_reservoir_empty",
 ]
 
+ALERT_LABELS = {
+    "alert_dry_run": "Dry Run",
+    "alert_rotor": "Rotor Blocked",
+    "alert_no_power": "No Power",
+    "alert_temp_high": "High Temperature",
+    "alert_temp_low": "Low Temperature",
+    "alert_temp_open": "Temp Probe Open",
+    "alert_temp_short": "Temp Probe Short",
+    "alert_com": "Communication Error",
+    "alert_reservoir_low": "Reservoir Low",
+    "alert_reservoir_empty": "Reservoir Empty",
+}
+
+
+def active_alerts(dev: dict) -> list[str]:
+    """Friendly labels of the alert flags the device currently raises."""
+    return [ALERT_LABELS[f] for f in ALERT_FIELDS if dev.get(f)]
+
 
 def device_display_name(dev: dict) -> str:
     name = (dev.get("name") or "").strip()

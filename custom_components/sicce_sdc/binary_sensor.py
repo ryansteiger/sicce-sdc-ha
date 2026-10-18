@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .entity import ALERT_FIELDS, SicceEntity, device_display_name
+from .entity import ALERT_FIELDS, SicceEntity, active_alerts, device_display_name
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -34,6 +34,7 @@ class SicceProblemSensor(SicceEntity, BinarySensorEntity):
     def extra_state_attributes(self) -> dict:
         dev = self._dev
         attrs = {f: bool(dev.get(f)) for f in ALERT_FIELDS}
+        attrs["active_alerts"] = active_alerts(dev)
         attrs["com_error_count"] = dev.get("com_error_count")
         attrs["last_status_update"] = dev.get("last_status_update")
         attrs["wifi_status"] = dev.get("wifi_status")
