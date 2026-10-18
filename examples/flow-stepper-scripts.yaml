@@ -1,0 +1,30 @@
+# Flow stepper scripts for the Sicce dashboard card.
+# Paste both into Settings > Automations & Scenes > Scripts (Edit in YAML),
+# or append to scripts.yaml. Replace number.your_pump_flow with your pump's
+# Flow entity and fan.your_pump with its fan entity (see the card example).
+
+sicce_tank_flow_up:
+  alias: "Sicce Flow +5"
+  mode: single
+  sequence:
+    - condition: state
+      entity_id: fan.your_pump
+      state: "on"
+    - service: number.set_value
+      target:
+        entity_id: number.your_pump_flow
+      data:
+        value: "{{ [100, (states('number.your_pump_flow') | float(0)) + 5] | min }}"
+
+sicce_tank_flow_down:
+  alias: "Sicce Flow -5"
+  mode: single
+  sequence:
+    - condition: state
+      entity_id: fan.your_pump
+      state: "on"
+    - service: number.set_value
+      target:
+        entity_id: number.your_pump_flow
+      data:
+        value: "{{ [5, (states('number.your_pump_flow') | float(0)) - 5] | max }}"

@@ -1,0 +1,121 @@
+# Sicce SDC tank card (Bubble Card style) - example for your dashboard.
+#
+# Before pasting:
+# 1. Install the Bubble Card frontend card from HACS (Frontend section).
+# 2. Create the two flow stepper scripts: copy examples/flow-stepper-scripts.yaml
+#    into your scripts (Settings > Automations & Scenes > Scripts > Add >
+#    Edit in YAML), it holds sicce_flow_up and sicce_flow_down.
+# 3. Replace every "your_pump" below with your pump's entity slug.
+#    Find yours under Settings > Devices & Services > Sicce SDC > your pump:
+#    the fan entity is fan.<slug>, and the others follow the same slug
+#    (number.<slug>_flow, select.<slug>_mode_control, and so on).
+# 4. Paste this whole block into a Manual card on your dashboard.
+#
+type: vertical-stack
+cards:
+  # Header: pump on/off toggle, temp readout chip on the right
+  - type: custom:bubble-card
+    card_type: button
+    entity: fan.your_pump
+    name: Return Pump
+    icon: mdi:pump
+    show_state: true
+    tap_action:
+      action: toggle
+    sub_button:
+      - entity: sensor.your_pump_temperature
+        icon: mdi:thermometer
+        show_state: true
+        show_icon: true
+
+  # Pump speed readout: big live % (the number entity mirrors live flow)
+  - type: custom:bubble-card
+    card_type: button
+    entity: number.your_pump_flow
+    name: Pump Speed
+    icon: mdi:speedometer
+    show_state: true
+    tap_action:
+      action: none
+
+  # Feed mode: one tap pauses for ~10 min, tap again to end early
+  - type: custom:bubble-card
+    card_type: button
+    entity: button.your_pump_feed_mode
+    name: Feed Mode
+    icon: mdi:fish
+    show_state: false
+    tap_action:
+      action: call-service
+      service: button.press
+      target:
+        entity_id: button.your_pump_feed_mode
+    sub_button:
+      - entity: binary_sensor.your_pump_feed_mode
+        icon: mdi:timer-sand
+        show_state: true
+
+  # Flow slider (drag, or use the steppers below)
+  - type: custom:bubble-card
+    card_type: slider
+    entity: number.your_pump_flow
+    name: Flow
+    icon: mdi:gauge
+    show_state: true
+
+  # Flow steppers: minus / plus, 5% per tap, only while running
+  - type: horizontal-stack
+    cards:
+      - type: custom:bubble-card
+        card_type: button
+        entity: script.sicce_tank_flow_down
+        name: "-5%"
+        icon: mdi:minus
+        show_state: false
+        tap_action:
+          action: call-service
+          service: script.turn_on
+          target:
+            entity_id: script.sicce_tank_flow_down
+      - type: custom:bubble-card
+        card_type: button
+        entity: script.sicce_tank_flow_up
+        name: "+5%"
+        icon: mdi:plus
+        show_state: false
+        tap_action:
+          action: call-service
+          service: script.turn_on
+          target:
+            entity_id: script.sicce_tank_flow_up
+
+  # Mode picker: Constant, Night, and the wave modes
+  - type: custom:bubble-card
+    card_type: select
+    entity: select.your_pump_mode_control
+    name: Mode
+    icon: mdi:waves
+    show_state: true
+
+  # Emergency off: one tap, no confirmation, big and red
+  - type: custom:bubble-card
+    card_type: button
+    entity: fan.your_pump
+    name: EMERGENCY OFF
+    icon: mdi:power
+    show_state: false
+    tap_action:
+      action: call-service
+      service: fan.turn_off
+      target:
+        entity_id: fan.your_pump
+    styles: |-
+      .bubble-button-card-container {
+        background: rgba(198, 40, 40, 0.92) !important;
+      }
+      .bubble-icon {
+        color: #ffffff !important;
+      }
+      .bubble-name {
+        color: #ffffff !important;
+      }

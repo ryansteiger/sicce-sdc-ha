@@ -35,6 +35,15 @@ pick each pump's real model, and it gets the right name in Home Assistant
 plus an **Estimated Flow** sensor in gph. Skip it and everything still
 works, you just do not get the flow estimate.
 
+## Want the dashboard card too?
+
+The repo ships a ready-made tank card in the Bubble Card style (the
+`examples` folder): pump speed readout, temperature, a Feed Mode button,
+a flow slider with minus/plus steppers, a mode dropdown, and a big red
+emergency off button. Install Bubble Card from HACS, paste in the two
+stepper scripts, paste the card into a Manual card, and swap in your own
+pump's entity names. Five minutes, instructions are in the files.
+
 ## Questions people ask
 
 **Is it safe for my pump?** Yes. Every command is one the app itself sends,
