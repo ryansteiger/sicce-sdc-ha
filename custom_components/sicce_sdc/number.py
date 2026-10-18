@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .entity import SicceEntity, device_display_name
+from .entity import SicceEntity, device_display_name, live_power
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -33,7 +33,7 @@ class SicceFlowNumber(SicceEntity, NumberEntity):
 
     @property
     def native_value(self) -> float:
-        return float(self._dev.get("power") or 0)
+        return float(live_power(self._dev))
 
     async def async_set_native_value(self, value: float) -> None:
         pct = int(value)

@@ -55,3 +55,33 @@ class SicceEntity(CoordinatorEntity):
             name=device_display_name(dev),
             sw_version=dev.get("fw_version"),
         )
+
+
+def _mb(dev: dict) -> list:
+    mb = dev.get("mb_status")
+    return mb if isinstance(mb, list) else []
+
+
+def live_power(dev: dict) -> int:
+    """Actual current flow % from the mainboard status registers.
+
+    The top-level `power` field is the app's last-posted setpoint and sits
+    at 0 when the pump was set from its physical dial. mb_status[5] is the
+    live output (verified: 74 on a pump running 74%, 0 on a stopped pump
+    whose setpoint register mb_program[2] still reads 50).
+    """
+    mb = _mb(dev)
+    if len(mb) > 5:
+        try:
+            return int(mb[5])
+        except (TypeError, ValueError):
+            pass
+    return int(dev.get("power") or 0)
+
+
+def is_running(dev: dict) -> bool:
+    """mb_status[0] is the running flag (1 running, 0 stopped)."""
+    mb = _mb(dev)
+    if len(mb) > 0:
+        return int(mb[0] or 0) == 1
+    return bool(dev.get("power_switch"))

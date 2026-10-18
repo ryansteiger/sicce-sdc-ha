@@ -7,7 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .entity import SicceEntity, device_display_name
+from .entity import SicceEntity, device_display_name, is_running, live_power
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -29,11 +29,11 @@ class SiccePumpFan(SicceEntity, FanEntity):
 
     @property
     def is_on(self) -> bool:
-        return bool(self._dev.get("power_switch"))
+        return is_running(self._dev)
 
     @property
     def percentage(self) -> int:
-        return int(self._dev.get("power") or 0)
+        return live_power(self._dev)
 
     async def _send(self, power=None, power_switch=None) -> None:
         await self._client.set_desired_state(self._dev, power=power, power_switch=power_switch)
@@ -42,7 +42,7 @@ class SiccePumpFan(SicceEntity, FanEntity):
     async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs) -> None:
         if percentage is not None:
             await self._send(power=percentage, power_switch=True)
-        elif int(self._dev.get("power") or 0) == 0:
+        elif live_power(self._dev) == 0 and int(self._dev.get("power") or 0) == 0:
             await self._send(power=50, power_switch=True)
         else:
             await self._send(power_switch=True)
