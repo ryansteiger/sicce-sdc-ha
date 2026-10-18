@@ -37,3 +37,16 @@ COLOR_LABEL_BY_CODE = {
     "blue": "Blue",
     "darkblue": "Dark Blue",
 }
+
+# Palette hex values from GET /api/colors; the device drives its ring
+# LED from the led_r/g/b percentages in the /v2/settings record, so a
+# color write sends the palette hex converted to percentages.
+COLOR_HEX_BY_ID = {
+    1: "9EA648",
+    2: "C67C51",
+    3: "9C4A6A",
+    4: "8360BB",
+    5: "B2DF89",
+    6: "4EB1E3",
+    7: "2C79CE",
+}

@@ -44,16 +44,19 @@ class SicceModeSelect(SicceEntity, SelectEntity):
     @property
     def current_option(self) -> str | None:
         label = mode_label(self._dev)
-        return label if label in MODE_OPTIONS else None
+        live = label if label in MODE_OPTIONS else None
+        return self._opt("option", live)
 
     async def async_select_option(self, option: str) -> None:
         program, mode = MODE_OPTIONS[option]
         await self._client.set_program(self._dev, program=program, mode=mode)
+        self._set_optimistic(option=option)
         await self.coordinator.async_request_refresh()
 
 
 class SicceColorSelect(SicceEntity, SelectEntity):
-    """Pump icon color, the app's palette (GET /api/colors)."""
+    """Pump color, the app's palette (GET /api/colors): sets both the
+    app icon color and the controller ring LED."""
 
     _attr_icon = "mdi:palette"
     _attr_options = list(COLOR_IDS)
@@ -61,7 +64,7 @@ class SicceColorSelect(SicceEntity, SelectEntity):
     def __init__(self, coordinator, client, device_id: int):
         super().__init__(coordinator, client, device_id)
         self._attr_unique_id = f"sicce_{device_id}_color"
-        self._attr_name = f"{device_display_name(self._dev)} Icon Color"
+        self._attr_name = f"{device_display_name(self._dev)} Pump Color"
 
     @property
     def current_option(self) -> str | None:

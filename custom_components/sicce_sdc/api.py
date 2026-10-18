@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import aiohttp
 
-from .const import BASE_URL
+from .const import BASE_URL, COLOR_HEX_BY_ID
 
 
 class SicceApiError(Exception):
@@ -96,9 +96,15 @@ class SicceClient:
         await self._post_program(device_obj["id"], body)
 
     async def set_color(self, device_obj: dict, color_id: int) -> None:
-        """Icon color: POST devices/{id}/v2/settings with the settings
-        body the app assembles, changing only color_id. Verified live
-        2026-10-18 (red -> blue -> red on a bench unit)."""
+        """Pump color: POST devices/{id}/v2/settings with the settings
+        body the app assembles. color_id sets the app icon; the led_*
+        percentages (the palette color converted from its hex) drive
+        the controller's ring LED, which the pump adopts from the
+        settings record and then reports back. Verified live on a
+        bench unit 2026-10-18 (green -> purple, seen on the hardware).
+        """
+        hexval = COLOR_HEX_BY_ID[int(color_id)]
+        led = [round(int(hexval[i : i + 2], 16) / 255 * 100) for i in (0, 2, 4)]
         body = {
             "slave_ids": device_obj.get("slave_ids") or [],
             "counterphase": device_obj.get("master_slave_phase") or 0,
@@ -107,9 +113,9 @@ class SicceClient:
             "aquarium_id": device_obj.get("aquarium_id"),
             "low_temp_th": device_obj.get("low_temp_th"),
             "high_temp_th": device_obj.get("high_temp_th"),
-            "led_r": device_obj.get("led_r"),
-            "led_g": device_obj.get("led_g"),
-            "led_b": device_obj.get("led_b"),
+            "led_r": led[0],
+            "led_g": led[1],
+            "led_b": led[2],
         }
         data = await self._request(
             "POST", f"devices/{device_obj['id']}/v2/settings", body=body

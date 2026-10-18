@@ -38,16 +38,21 @@ class SiccePumpFan(SicceEntity, FanEntity):
     async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs) -> None:
         if percentage is not None:
             await self._client.apply_flow(self._dev, percentage)
+            self._set_optimistic(is_on=True, percentage=int(percentage))
         elif int(self._dev.get("program_v1") or 0) > 0:
             await self._client.set_power_switch(self._dev, True)
+            self._set_optimistic(is_on=True, percentage=int(self._dev.get("program_v1") or 0))
         else:
             await self._client.apply_flow(self._dev, 50)
+            self._set_optimistic(is_on=True, percentage=50)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs) -> None:
         await self._client.set_power_switch(self._dev, False)
+        self._set_optimistic(is_on=False, percentage=0)
         await self.coordinator.async_request_refresh()
 
     async def async_set_percentage(self, percentage: int) -> None:
         await self._client.apply_flow(self._dev, percentage)
+        self._set_optimistic(is_on=int(percentage) > 0, percentage=int(percentage))
         await self.coordinator.async_request_refresh()
