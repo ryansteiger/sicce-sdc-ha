@@ -29,11 +29,11 @@ class SiccePumpFan(SicceEntity, FanEntity):
 
     @property
     def is_on(self) -> bool:
-        return is_running(self._dev)
+        return self._opt("is_on", is_running(self._dev))
 
     @property
     def percentage(self) -> int:
-        return live_power(self._dev)
+        return self._opt("percentage", live_power(self._dev))
 
     async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs) -> None:
         if percentage is not None:

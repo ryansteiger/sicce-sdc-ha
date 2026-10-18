@@ -1,6 +1,8 @@
 """Shared entity base for Sicce SDC."""
 from __future__ import annotations
 
+import time
+
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -34,6 +36,28 @@ class SicceEntity(CoordinatorEntity):
         super().__init__(coordinator)
         self._client = client
         self._device_id = device_id
+        self._optimistic_until = 0.0
+        self._optimistic_values: dict = {}
+
+    def _set_optimistic(self, **values) -> None:
+        """Hold commanded values until the pump's own status report
+        confirms them. The pump takes ~10 s to report a change back to
+        the cloud; without this, HA repaints the stale state over the
+        user's action (the toggle visibly bounces back)."""
+        self._optimistic_values.update(values)
+        self._optimistic_until = time.monotonic() + 45
+
+    def _opt(self, key, live):
+        """Optimistic value while pending, live value once the pump
+        reports it (or the hold expires)."""
+        if key in self._optimistic_values:
+            if live == self._optimistic_values[key]:
+                del self._optimistic_values[key]
+                return live
+            if time.monotonic() < self._optimistic_until:
+                return self._optimistic_values[key]
+            del self._optimistic_values[key]
+        return live
 
     @property
     def _dev(self) -> dict:

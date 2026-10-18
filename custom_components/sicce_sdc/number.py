@@ -33,8 +33,9 @@ class SicceFlowNumber(SicceEntity, NumberEntity):
 
     @property
     def native_value(self) -> float:
-        return float(live_power(self._dev))
+        return self._opt("value", float(live_power(self._dev)))
 
     async def async_set_native_value(self, value: float) -> None:
         await self._client.apply_flow(self._dev, int(value))
+        self._set_optimistic(value=float(int(value)), is_on=int(value) > 0)
         await self.coordinator.async_request_refresh()
