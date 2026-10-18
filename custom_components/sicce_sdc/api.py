@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import aiohttp
 
-from .const import BASE_URL, COLOR_HEX_BY_ID
+from .const import BASE_URL, COLOR_LED_PCT
 
 
 class SicceApiError(Exception):
@@ -95,6 +95,32 @@ class SicceClient:
         }
         await self._post_program(device_obj["id"], body)
 
+    def _settings_body(self, device_obj: dict, **overrides) -> dict:
+        """The /v2/settings body the app assembles, with overrides."""
+        body = {
+            "slave_ids": device_obj.get("slave_ids") or [],
+            "counterphase": device_obj.get("master_slave_phase") or 0,
+            "color_id": device_obj.get("device_color_id"),
+            "name": device_obj.get("name"),
+            "aquarium_id": device_obj.get("aquarium_id"),
+            "low_temp_th": device_obj.get("low_temp_th"),
+            "high_temp_th": device_obj.get("high_temp_th"),
+            "led_r": device_obj.get("led_r"),
+            "led_g": device_obj.get("led_g"),
+            "led_b": device_obj.get("led_b"),
+        }
+        body.update(overrides)
+        return body
+
+    async def _post_settings(self, device_obj: dict, **overrides) -> None:
+        data = await self._request(
+            "POST",
+            f"devices/{device_obj['id']}/v2/settings",
+            body=self._settings_body(device_obj, **overrides),
+        )
+        if not data.get("result"):
+            raise SicceApiError("settings change not accepted by cloud")
+
     async def set_color(self, device_obj: dict, color_id: int) -> None:
         """Pump color: POST devices/{id}/v2/settings with the settings
         body the app assembles. color_id sets the app icon; the led_*
@@ -103,25 +129,23 @@ class SicceClient:
         settings record and then reports back. Verified live on a
         bench unit 2026-10-18 (green -> purple, seen on the hardware).
         """
-        hexval = COLOR_HEX_BY_ID[int(color_id)]
-        led = [round(int(hexval[i : i + 2], 16) / 255 * 100) for i in (0, 2, 4)]
-        body = {
-            "slave_ids": device_obj.get("slave_ids") or [],
-            "counterphase": device_obj.get("master_slave_phase") or 0,
-            "color_id": int(color_id),
-            "name": device_obj.get("name"),
-            "aquarium_id": device_obj.get("aquarium_id"),
-            "low_temp_th": device_obj.get("low_temp_th"),
-            "high_temp_th": device_obj.get("high_temp_th"),
-            "led_r": led[0],
-            "led_g": led[1],
-            "led_b": led[2],
-        }
-        data = await self._request(
-            "POST", f"devices/{device_obj['id']}/v2/settings", body=body
+        led = COLOR_LED_PCT[int(color_id)]
+        await self._post_settings(
+            device_obj,
+            color_id=int(color_id),
+            led_r=led[0],
+            led_g=led[1],
+            led_b=led[2],
         )
-        if not data.get("result"):
-            raise SicceApiError("color change not accepted by cloud")
+
+    async def set_temp_thresholds(
+        self, device_obj: dict, low_c: float, high_c: float
+    ) -> None:
+        """Temperature alert thresholds (deg C), the app's alarm
+        settings. Verified live 2026-10-18 on a bench unit."""
+        await self._post_settings(
+            device_obj, low_temp_th=float(low_c), high_temp_th=float(high_c)
+        )
 
     async def apply_flow(self, device_obj: dict, pct: int) -> None:
         """Set flow %: 0 turns the pump off; >0 switches it on if needed,

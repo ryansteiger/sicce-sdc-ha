@@ -50,3 +50,17 @@ COLOR_HEX_BY_ID = {
     6: "4EB1E3",
     7: "2C79CE",
 }
+
+# Saturated ring-LED drive values (percentages) per palette color. The
+# GET /colors hexes are pastel UI swatches; driven raw on an RGB LED
+# they wash out (red reads pink, green reads pale). These equivalents
+# keep the hue and drive it solid.
+COLOR_LED_PCT = {
+    1: (100, 85, 0),   # Yellow
+    2: (100, 45, 0),   # Orange
+    3: (100, 0, 0),    # Red
+    4: (55, 0, 100),   # Purple
+    5: (0, 100, 0),    # Green
+    6: (0, 35, 100),   # Blue
+    7: (0, 0, 50),     # Dark Blue
+}
