@@ -24,7 +24,9 @@ speed %. (The older POST devices/{id}/status path accepts writes but the
 SDC 3.0 pump ignores them.) The **Mode Control** select writes the same
 endpoint: Constant Speed (program 1, mode 0), Night Mode (program 2), and
 the wave modes Lagoonal Ripple, Sharp Break, Reef Crest, Slow Current,
-Fast Current (program 1, modes 1 to 5).
+Fast Current (program 1, modes 1 to 5). The **Icon Color** select sets the
+pump's app icon color (the GET /colors palette: Yellow, Orange, Red,
+Purple, Green, Blue, Dark Blue) via /v2/settings, as the app does.
 
 **Pump model (optional):** the Sicce cloud does not report pump size, every
 size identifies as the same platform model. Under the integration's

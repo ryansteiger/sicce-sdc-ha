@@ -95,6 +95,28 @@ class SicceClient:
         }
         await self._post_program(device_obj["id"], body)
 
+    async def set_color(self, device_obj: dict, color_id: int) -> None:
+        """Icon color: POST devices/{id}/v2/settings with the settings
+        body the app assembles, changing only color_id. Verified live
+        2026-10-18 (red -> blue -> red on a bench unit)."""
+        body = {
+            "slave_ids": device_obj.get("slave_ids") or [],
+            "counterphase": device_obj.get("master_slave_phase") or 0,
+            "color_id": int(color_id),
+            "name": device_obj.get("name"),
+            "aquarium_id": device_obj.get("aquarium_id"),
+            "low_temp_th": device_obj.get("low_temp_th"),
+            "high_temp_th": device_obj.get("high_temp_th"),
+            "led_r": device_obj.get("led_r"),
+            "led_g": device_obj.get("led_g"),
+            "led_b": device_obj.get("led_b"),
+        }
+        data = await self._request(
+            "POST", f"devices/{device_obj['id']}/v2/settings", body=body
+        )
+        if not data.get("result"):
+            raise SicceApiError("color change not accepted by cloud")
+
     async def apply_flow(self, device_obj: dict, pct: int) -> None:
         """Set flow %: 0 turns the pump off; >0 switches it on if needed,
         then writes the speed as the program's v1."""

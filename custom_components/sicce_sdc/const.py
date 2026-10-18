@@ -16,3 +16,24 @@ MODEL_LABELS = {
 }
 MODEL_MAX_GPH = {"sdc_3_0": 800, "sdc_6_0": 1450, "sdc_9_0": 2500}
 CONF_MODELS = "models"
+
+# Pump icon color catalog, from GET /api/colors. The id is written via
+# /v2/settings as color_id; codes are the API's, labels are for display.
+COLOR_IDS = {
+    "Yellow": 1,
+    "Orange": 2,
+    "Red": 3,
+    "Purple": 4,
+    "Green": 5,
+    "Blue": 6,
+    "Dark Blue": 7,
+}
+COLOR_LABEL_BY_CODE = {
+    "yellow": "Yellow",
+    "orange": "Orange",
+    "red": "Red",
+    "purple": "Purple",
+    "green": "Green",
+    "blue": "Blue",
+    "darkblue": "Dark Blue",
+}

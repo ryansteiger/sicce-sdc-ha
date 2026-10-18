@@ -54,14 +54,16 @@ PRESETS = {1: "Constant Speed", 2: "Night Mode"}
 
 
 def mode_label(dev: dict) -> str:
+    """Active mode label. A wave mode (mode 1..5) is what the pump is
+    actually running whenever one is set, even with preset 1 present in
+    the object (verified live: preset=1 + mode=4 runs Slow Current);
+    the preset only names the mode when mode is 0."""
     mode = int(dev.get("mode") or 0)
     preset = int(dev.get("preset") or 0)
-    if dev.get("program_status") and mode in MODES:
+    if mode in MODES:
         return MODES[mode]
     if preset in PRESETS:
         return PRESETS[preset]
-    if mode in MODES:
-        return MODES[mode]
     return "No Mode"
 
 

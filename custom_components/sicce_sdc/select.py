@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import COLOR_IDS, COLOR_LABEL_BY_CODE, DOMAIN
 from .entity import SicceEntity, device_display_name
 from .sensor import MODES, mode_label
 
@@ -25,10 +25,11 @@ MODE_OPTIONS: dict[str, tuple[int, int]] = {
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     data = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        SicceModeSelect(data["coordinator"], data["client"], device_id)
-        for device_id in data["coordinator"].data
-    )
+    entities = []
+    for device_id in data["coordinator"].data:
+        entities.append(SicceModeSelect(data["coordinator"], data["client"], device_id))
+        entities.append(SicceColorSelect(data["coordinator"], data["client"], device_id))
+    async_add_entities(entities)
 
 
 class SicceModeSelect(SicceEntity, SelectEntity):
@@ -48,4 +49,31 @@ class SicceModeSelect(SicceEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         program, mode = MODE_OPTIONS[option]
         await self._client.set_program(self._dev, program=program, mode=mode)
+        await self.coordinator.async_request_refresh()
+
+
+class SicceColorSelect(SicceEntity, SelectEntity):
+    """Pump icon color, the app's palette (GET /api/colors)."""
+
+    _attr_icon = "mdi:palette"
+    _attr_options = list(COLOR_IDS)
+
+    def __init__(self, coordinator, client, device_id: int):
+        super().__init__(coordinator, client, device_id)
+        self._attr_unique_id = f"sicce_{device_id}_color"
+        self._attr_name = f"{device_display_name(self._dev)} Icon Color"
+
+    @property
+    def current_option(self) -> str | None:
+        code = (self._dev.get("DeviceColor") or {}).get("code")
+        if code in COLOR_LABEL_BY_CODE:
+            return COLOR_LABEL_BY_CODE[code]
+        color_id = self._dev.get("device_color_id")
+        for label, cid in COLOR_IDS.items():
+            if cid == color_id:
+                return label
+        return None
+
+    async def async_select_option(self, option: str) -> None:
+        await self._client.set_color(self._dev, COLOR_IDS[option])
         await self.coordinator.async_request_refresh()
