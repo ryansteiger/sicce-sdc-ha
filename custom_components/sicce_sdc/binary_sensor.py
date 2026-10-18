@@ -12,10 +12,11 @@ from .entity import ALERT_FIELDS, SicceEntity, active_alerts, device_display_nam
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     data = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        SicceProblemSensor(data["coordinator"], data["client"], device_id)
-        for device_id in data["coordinator"].data
-    )
+    entities = []
+    for device_id in data["coordinator"].data:
+        entities.append(SicceProblemSensor(data["coordinator"], data["client"], device_id))
+        entities.append(SicceFeedSensor(data["coordinator"], data["client"], device_id))
+    async_add_entities(entities)
 
 
 class SicceProblemSensor(SicceEntity, BinarySensorEntity):
@@ -39,3 +40,18 @@ class SicceProblemSensor(SicceEntity, BinarySensorEntity):
         attrs["last_status_update"] = dev.get("last_status_update")
         attrs["wifi_status"] = dev.get("wifi_status")
         return attrs
+
+
+class SicceFeedSensor(SicceEntity, BinarySensorEntity):
+    """On while the pump is in a feed pause (pause_mode)."""
+
+    _attr_icon = "mdi:fish"
+
+    def __init__(self, coordinator, client, device_id: int):
+        super().__init__(coordinator, client, device_id)
+        self._attr_unique_id = f"sicce_{device_id}_feed_mode"
+        self._attr_name = f"{device_display_name(self._dev)} Feed Mode"
+
+    @property
+    def is_on(self) -> bool:
+        return bool(self._dev.get("pause_mode"))

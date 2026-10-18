@@ -1,5 +1,7 @@
 # Sicce SDC for Home Assistant (ContrAll cloud)
 
+![Sicce Syncra SDC pump and controller](https://premiumaquatics.com/cdn/shop/files/21136.png?v=1740526175)
+
 Unofficial integration for Sicce Syncra SDC WiFi pumps. It signs in to the
 same cloud the ContrAll app uses (sicce.thingscloud.it) with your ContrAll
 email and password. No vendor key needed.
@@ -24,16 +26,19 @@ speed %. (The older POST devices/{id}/status path accepts writes but the
 SDC 3.0 pump ignores them.) The **Mode Control** select writes the same
 endpoint: Constant Speed (program 1, mode 0), Night Mode (program 2), and
 the wave modes Lagoonal Ripple, Sharp Break, Reef Crest, Slow Current,
-Fast Current (program 1, modes 1 to 5). The **Icon Color** select sets the
+Fast Current (program 1, modes 1 to 5). The **Feed Mode** button starts (or ends) a feed pause, the app's
+10-minute pump stop: the pump remembers its setpoint and resumes on its
+own. A Feed Mode binary sensor shows while a pause is active.
+The **Icon Color** select sets the
 pump's app icon color (the GET /colors palette: Yellow, Orange, Red,
 Purple, Green, Blue, Dark Blue) via /v2/settings, as the app does.
 
 **Pump model (optional):** the Sicce cloud does not report pump size, every
 size identifies as the same platform model. Under the integration's
-**Configure** button you can declare each pump's model (SDC 3.0 / 6.0 / 9.0).
+**Configure** button you can declare each pump's model (SDC 3.0 / 6.0 / 7.0 / 9.0).
 The declaration sets the model label in Home Assistant and enables an
 **Estimated Flow** sensor for that pump (live % of the model's rated max
-flow at zero head: roughly 800 / 1,450 / 2,500 gph; an estimate, since real
+flow at zero head: roughly 800 / 1,450 / 1,900 / 2,500 gph; an estimate, since real
 flow depends on plumbing head height). Undeclared pumps behave as before.
 
 Displayed flow is the pump's LIVE output, read from its mainboard status
@@ -55,3 +60,5 @@ later version once its write path is verified on a bench unit.
 
 Cloud-dependent by design: if Sicce's cloud is down, so is this. Local
 control research is tracked separately.
+
+Product photo: Premium Aquatics listing for the Syncra SDC 9.0.

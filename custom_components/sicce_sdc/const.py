@@ -12,9 +12,10 @@ MODEL_UNKNOWN = "unknown"
 MODEL_LABELS = {
     "sdc_3_0": "Syncra SDC 3.0",
     "sdc_6_0": "Syncra SDC 6.0",
+    "sdc_7_0": "Syncra SDC 7.0",
     "sdc_9_0": "Syncra SDC 9.0",
 }
-MODEL_MAX_GPH = {"sdc_3_0": 800, "sdc_6_0": 1450, "sdc_9_0": 2500}
+MODEL_MAX_GPH = {"sdc_3_0": 800, "sdc_6_0": 1450, "sdc_7_0": 1900, "sdc_9_0": 2500}
 CONF_MODELS = "models"
 
 # Pump icon color catalog, from GET /api/colors. The id is written via

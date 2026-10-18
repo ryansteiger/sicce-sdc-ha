@@ -80,6 +80,24 @@ class SicceClient:
         """On/off: one-field body to the program endpoint, as the app sends."""
         await self._post_program(device_obj["id"], {"power_switch": bool(on)})
 
+    async def set_pause(self, device_obj: dict, on: bool) -> None:
+        """Feed mode: the program body plus pause_mode. Verified live
+        2026-10-18 both directions; the pump stops within ~12 s, holds
+        for its feed duration (10 min default), and resumes its
+        remembered setpoint, ignoring the body's v1 on the way out."""
+        body = {
+            "program_preset": int(device_obj.get("program_preset") or 0),
+            "program": int(device_obj.get("preset") or 1),
+            "mode": int(device_obj.get("mode") or 0),
+            "v1": int(device_obj.get("program_v1") or 0),
+            "v2": int(device_obj.get("program_v2") or 0),
+            "t1": (device_obj.get("program_t1") or 0) / 10,
+            "t2": (device_obj.get("program_t2") or 0) / 10,
+            "start": 0,
+            "pause_mode": bool(on),
+        }
+        await self._post_program(device_obj["id"], body)
+
     async def set_program(self, device_obj: dict, v1=None, mode=None, program=None) -> None:
         """Speed/mode write built from the device's current program fields.
         v1 is the primary speed %. t1/t2 are sent in tenths, as stored."""
