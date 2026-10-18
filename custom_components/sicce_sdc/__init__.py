@@ -15,7 +15,7 @@ from .api import SicceApiError, SicceAuthError, SicceClient
 from .const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
-PLATFORMS = [Platform.FAN, Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.FAN, Platform.NUMBER, Platform.SENSOR, Platform.BINARY_SENSOR]
 SCAN_INTERVAL = timedelta(seconds=30)
 
 
