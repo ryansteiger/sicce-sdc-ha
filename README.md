@@ -1,84 +1,92 @@
 # Sicce SDC for Home Assistant
 
-![Sicce Syncra SDC pump and controller](https://premiumaquatics.com/cdn/shop/files/21136.png?v=1740526175)
+<p align="center">
+  <img src="https://premiumaquatics.com/cdn/shop/files/21136.png?v=1740526175" width="340" alt="Sicce Syncra SDC pump and controller">
+</p>
 
-**Your return pump, finally in Home Assistant.** This unofficial integration
-talks to the same cloud as Sicce's ContrAll app, so anything the app can do
-with your Syncra SDC, your automations can do too. Feed the fish without
-opening an app. Drop the flow at night. Get paged when the pump says
-something is wrong, in words, not just "Problem."
+<p align="center"><b>Your Sicce Syncra SDC pump, controlled from Home Assistant.</b><br>
+Same cloud as the ContrAll app, so if the app can do it, your automations can too.</p>
 
-No vendor key, no Sicce developer account, no waiting on Italy. Just your
-ContrAll email and password, the same ones you already use in the app.
+## What you get
 
-## What each pump gets
+| | |
+|---|---|
+| **Pump control** | On/off and flow %, plus a dashboard-friendly flow slider |
+| **Wave modes** | Constant Speed, Night Mode, Lagoonal Ripple, Sharp Break, Reef Crest, Slow Current, Fast Current |
+| **Feed Mode button** | Pauses the pump for feeding (about 10 min), then it resumes on its own |
+| **Pump Color** | Sets the color in the app and the ring LED on the real controller |
+| **Temperature** | The pump's own water temperature reading |
+| **Alerts in plain English** | "High Temperature", "Dry Run", "Rotor Blocked", or just "OK" |
+| **Alarm thresholds** | Set the pump's high/low temperature alarms from Home Assistant |
 
-- **Fan control.** On/off and flow %, because it is basically a very
-  expensive, very wet fan.
-- **Flow slider.** The same control as a number, much nicer on a dashboard.
-- **Mode Control dropdown.** Constant Speed, Night Mode, and the wave
-  modes: Lagoonal Ripple, Sharp Break, Reef Crest, Slow Current, Fast
-  Current.
-- **Feed Mode button.** One press pauses the pump for feeding, about
-  10 minutes, just like the app. Press again to end it early. The pump
-  remembers its setpoint and picks up right where it left off. A matching
-  sensor shows while a feed pause is running.
-- **Pump Color dropdown.** Pick the app's color for the pump and the ring
-  LED on the physical controller changes to match. Sicce's own color
-  values are oddly pastel (their "red" is really a mauve), so this drives
-  the LED with proper saturated colors: red looks red.
-- **Temperature sensor.** The pump's own water temperature reading.
-- **Alerts sensor.** Says what is actually wrong, in English: High
-  Temperature, Low Temperature, Dry Run, Rotor Blocked, No Power, Temp
-  Probe Open, Temp Probe Short, Communication Error, Reservoir Low,
-  Reservoir Empty. Or just "OK," which is what we all want to read.
-- **Problem binary sensor.** The simple on/off version of the above, for
-  automations that just want a yes or no.
-- **Temp Alert Low / High settings.** The pump's own alarm thresholds,
-  adjustable from Home Assistant. The pump watches its temperature against
-  these and raises the matching alert itself.
+## Setup
 
-## The model thing (worth 30 seconds)
+1. Add this repo in HACS (Integrations, top right menu, Custom repositories).
+2. Install **Sicce SDC (ContrAll Cloud)** and restart Home Assistant.
+3. Add the integration and sign in with your ContrAll email and password.
 
-Sicce's cloud does not report which size your pump is. A 3.0, a 6.0, a 7.0
-and a 9.0 all introduce themselves to the internet as the exact same
-thing, because in Sicce's data "Syncra SDC 3.0" is the controller platform,
-not the pump size. Yes, really.
+That is it. No developer account, no vendor key, nothing to request from Sicce.
 
-So the integration asks you instead. Hit **Configure** on the integration,
-pick each pump's real model, and two things happen: the pump gets its
-correct name in Home Assistant, and an **Estimated Flow** sensor appears,
-live % of that model's rated max flow (roughly 800, 1,450, 1,900 and
-2,500 gph). It is an honest estimate, your plumbing's head height gets a
-vote too. Never pick a model and nothing changes, no guessing, no fake
-numbers.
+## One last thing: tell it which pump you have
 
-## Good to know
+Sicce's cloud never says whether a pump is a 3.0, 6.0, 7.0 or 9.0, they all
+report as the same model. So open the integration's **Configure** button,
+pick each pump's real model, and it gets the right name in Home Assistant
+plus an **Estimated Flow** sensor in gph. Skip it and everything still
+works, you just do not get the flow estimate.
 
-- **It is a cloud integration.** If Sicce's cloud naps, so does this. The
-  pumps keep running their last program either way, they are not that
-  fragile.
-- **The pump reports back on its own schedule,** about 10 seconds after a
-  change. The integration holds the state you asked for until the pump
-  confirms it, so toggles do not bounce while the cloud catches up.
-- **Displayed flow is the pump's real live output,** read from its
-  mainboard registers, not the setpoint field. A pump started from its
-  physical dial can show a setpoint of 0 while actually pushing 74%, and
-  this integration believes the water, not the paperwork.
-- Everything here was reverse engineered from the ContrAll app and
-  verified command by command on a real pump in a bucket, so the fish were
-  never the test subjects.
+## Questions people ask
 
-## Install (HACS)
+**Is it safe for my pump?** Yes. Every command is one the app itself sends,
+and if the cloud ever goes down your pump simply keeps running its last
+program.
 
-1. HACS, Integrations, top right menu, Custom repositories. Add this
-   repo's URL, category Integration.
-2. Install "Sicce SDC (ContrAll Cloud)" and restart Home Assistant.
-3. Settings, Devices & Services, Add Integration, "Sicce SDC", enter your
-   ContrAll email and password.
+**Why does the flow take a few seconds to update after I change it?** The
+pump reports back about 10 seconds later. The integration shows the value
+you set right away and lets the pump confirm it, so nothing flickers.
 
-## Fine print
+**Does it work without the internet?** No, this is a cloud integration,
+same as the app. Your pump does not care, it keeps pumping either way.
 
-Unofficial and unaffiliated with Sicce. Built by a reef keeper who wanted
-his return pump in his automations. Product photo from the Premium
-Aquatics listing for the Syncra SDC 9.0.
+<details>
+<summary><b>For the nerds: how it actually works</b></summary>
+
+<br>
+
+Reverse engineered from the ContrAll app (a React Native app by Zepping)
+and verified command by command on a real pump in a bucket of water.
+
+- **Login:** email and password to `sicce.thingscloud.it/api`, returns a
+  Bearer token. The app has no vendor key and no MQTT; that key belongs to
+  a separate partner API you do not need.
+- **Commands:** `POST devices/{id}/v2/program`. `{"power_switch": bool}`
+  for on/off, otherwise a program body `{program, mode, v1, v2, t1, t2,
+  start, program_preset}` where `v1` is speed %. Constant is program 1
+  mode 0, Night is program 2, wave modes are program 1 with mode 1 to 5.
+  Feed mode is the same body plus `"pause_mode": true`. (The older
+  `/status` full-object write returns success but the SDC pump ignores
+  it. Ask us how we know.)
+- **Live values** come from the pump's mainboard registers in its status
+  report: `mb_status[0]` running, `mb_status[2]` temperature x10,
+  `mb_status[5]` live flow %. The setpoint field lies for dial-started
+  pumps, the registers do not.
+- **Color and thresholds** live in a settings record the pump syncs:
+  `POST devices/{id}/v2/settings`. `color_id` sets the app icon, and the
+  ring LED follows the `led_r/g/b` percentages in that record. Sicce's
+  palette hexes are pastel UI swatches, so the integration converts each
+  color to a saturated equivalent for the LED.
+- **Alarms** are evaluated by the pump itself against its thresholds and
+  reported as flags (`alert_temp_high` and friends). The Alerts sensor
+  just gives them their names.
+- **Pump size** is genuinely absent from the API: every size carries
+  DeviceModel id 9, the controller platform. Hence the model picker.
+- **Local control:** the pump's LAN port is only awake during WiFi
+  provisioning, and its cloud address is not delivered by DNS, so there
+  is no local API to talk to. Cloud is the honest route for now.
+
+</details>
+
+---
+
+Unofficial, not affiliated with Sicce. Built by a reef keeper who wanted
+his return pump in his automations. Product photo: Premium Aquatics.
