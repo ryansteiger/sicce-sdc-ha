@@ -16,9 +16,15 @@ email and password. No vendor key needed.
   rotor, no power, temperature high/low, comms, reservoir). Individual
   flags are exposed as attributes.
 
-Polling interval is 30 seconds. Commands are desired-state writes, exactly
-like the app: the full device object is posted back with `power` and
-`power_switch` changed.
+Polling interval is 30 seconds. Commands use the SDC 3.0 controller's
+program endpoint, POST devices/{id}/v2/program, exactly like the app:
+{"power_switch": bool} for on/off, otherwise a program body
+{program, mode, v1, v2, t1, t2, start, program_preset} where v1 is the
+speed %. (The older POST devices/{id}/status path accepts writes but the
+SDC 3.0 pump ignores them.) The **Mode Control** select writes the same
+endpoint: Constant Speed (program 1, mode 0), Night Mode (program 2), and
+the wave modes Lagoonal Ripple, Sharp Break, Reef Crest, Slow Current,
+Fast Current (program 1, modes 1 to 5).
 
 Displayed flow is the pump's LIVE output, read from its mainboard status
 registers (`mb_status[5]`), not the app's setpoint field: a pump set from

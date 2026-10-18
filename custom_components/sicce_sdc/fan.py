@@ -35,23 +35,19 @@ class SiccePumpFan(SicceEntity, FanEntity):
     def percentage(self) -> int:
         return live_power(self._dev)
 
-    async def _send(self, power=None, power_switch=None) -> None:
-        await self._client.set_desired_state(self._dev, power=power, power_switch=power_switch)
-        await self.coordinator.async_request_refresh()
-
     async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None, **kwargs) -> None:
         if percentage is not None:
-            await self._send(power=percentage, power_switch=True)
-        elif live_power(self._dev) == 0 and int(self._dev.get("power") or 0) == 0:
-            await self._send(power=50, power_switch=True)
+            await self._client.apply_flow(self._dev, percentage)
+        elif int(self._dev.get("program_v1") or 0) > 0:
+            await self._client.set_power_switch(self._dev, True)
         else:
-            await self._send(power_switch=True)
+            await self._client.apply_flow(self._dev, 50)
+        await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs) -> None:
-        await self._send(power_switch=False)
+        await self._client.set_power_switch(self._dev, False)
+        await self.coordinator.async_request_refresh()
 
     async def async_set_percentage(self, percentage: int) -> None:
-        if percentage == 0:
-            await self._send(power_switch=False)
-        else:
-            await self._send(power=percentage, power_switch=True)
+        await self._client.apply_flow(self._dev, percentage)
+        await self.coordinator.async_request_refresh()

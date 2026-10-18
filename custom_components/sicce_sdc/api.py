@@ -1,9 +1,13 @@
 """Minimal async client for the Sicce ThingsCloud API (ContrAll cloud).
 
 Authenticates exactly like the ContrAll app: POST mobile/login with
-email/password returns a Bearer token. Commands are desired-state writes:
-POST devices/{id}/status with the entire device object, mutating only
-`power` (flow %) and `power_switch` (bool).
+email/password returns a Bearer token. Commands go to the SDC 3.0
+controller's program endpoint, POST devices/{id}/v2/program (the same
+endpoint DeviceControllerSDC3.updateDevice uses): a one-field
+{"power_switch": bool} body for on/off, or a program body
+{program, mode, v1, v2, t1, t2, start, program_preset} for speed/mode.
+Verified live 2026-10-18. (POST devices/{id}/status accepts writes but
+the pump ignores them; it is the older controller's path.)
 """
 from __future__ import annotations
 
@@ -67,14 +71,38 @@ class SicceClient:
         data = await self._request("GET", f"devices/{device_id}")
         return data["data"]
 
-    async def set_desired_state(self, device_obj: dict, power=None, power_switch=None) -> None:
-        """POST the full device object back with power / power_switch mutated."""
-        body = dict(device_obj)
-        if power is not None:
-            body["power"] = int(power)
-        if power_switch is not None:
-            body["power_switch"] = bool(power_switch)
-        data = await self._request("POST", f"devices/{device_obj['id']}/status", body=body)
+    async def _post_program(self, device_id: int, body: dict) -> None:
+        data = await self._request("POST", f"devices/{device_id}/v2/program", body=body)
         if not data.get("result"):
             raise SicceApiError("command not accepted by cloud")
+
+    async def set_power_switch(self, device_obj: dict, on: bool) -> None:
+        """On/off: one-field body to the program endpoint, as the app sends."""
+        await self._post_program(device_obj["id"], {"power_switch": bool(on)})
+
+    async def set_program(self, device_obj: dict, v1=None, mode=None, program=None) -> None:
+        """Speed/mode write built from the device's current program fields.
+        v1 is the primary speed %. t1/t2 are sent in tenths, as stored."""
+        body = {
+            "program_preset": int(device_obj.get("program_preset") or 0),
+            "program": int(program if program is not None else (device_obj.get("preset") or 1)),
+            "mode": int(mode if mode is not None else (device_obj.get("mode") or 0)),
+            "v1": int(v1 if v1 is not None else (device_obj.get("program_v1") or 0)),
+            "v2": int(device_obj.get("program_v2") or 0),
+            "t1": (device_obj.get("program_t1") or 0) / 10,
+            "t2": (device_obj.get("program_t2") or 0) / 10,
+            "start": 0,
+        }
+        await self._post_program(device_obj["id"], body)
+
+    async def apply_flow(self, device_obj: dict, pct: int) -> None:
+        """Set flow %: 0 turns the pump off; >0 switches it on if needed,
+        then writes the speed as the program's v1."""
+        pct = int(pct)
+        if pct <= 0:
+            await self.set_power_switch(device_obj, False)
+            return
+        if not device_obj.get("power_switch"):
+            await self.set_power_switch(device_obj, True)
+        await self.set_program(device_obj, v1=pct)
 
