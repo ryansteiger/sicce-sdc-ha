@@ -4,7 +4,7 @@
 # Flow entity and fan.your_pump with its fan entity (see the card example).
 
 sicce_tank_flow_up:
-  alias: "Sicce Flow +5"
+  alias: "Sicce Flow +1"
   mode: single
   sequence:
     - condition: state
@@ -14,10 +14,10 @@ sicce_tank_flow_up:
       target:
         entity_id: number.your_pump_flow
       data:
-        value: "{{ [100, (states('number.your_pump_flow') | float(0)) + 5] | min }}"
+        value: "{{ [100, (states('number.your_pump_flow') | float(0)) + 1] | min }}"
 
 sicce_tank_flow_down:
-  alias: "Sicce Flow -5"
+  alias: "Sicce Flow -1"
   mode: single
   sequence:
     - condition: state
@@ -27,4 +27,4 @@ sicce_tank_flow_down:
       target:
         entity_id: number.your_pump_flow
       data:
-        value: "{{ [5, (states('number.your_pump_flow') | float(0)) - 5] | max }}"
+        value: "{{ [1, (states('number.your_pump_flow') | float(0)) - 1] | max }}"

@@ -69,7 +69,7 @@ cards:
       - type: custom:bubble-card
         card_type: button
         entity: script.sicce_tank_flow_down
-        name: "-5%"
+        name: "-1%"
         icon: mdi:minus
         show_state: false
         tap_action:
@@ -80,7 +80,7 @@ cards:
       - type: custom:bubble-card
         card_type: button
         entity: script.sicce_tank_flow_up
-        name: "+5%"
+        name: "+1%"
         icon: mdi:plus
         show_state: false
         tap_action:
