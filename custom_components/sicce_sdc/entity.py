@@ -4,7 +4,7 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, MODEL_LABELS
 
 ALERT_FIELDS = [
     "alert_dry_run",
@@ -45,9 +45,16 @@ class SicceEntity(CoordinatorEntity):
         return dev is not None and bool(dev.get("wifi_status"))
 
     @property
+    def model_key(self) -> str | None:
+        """User-declared pump model key from the integration options."""
+        models = getattr(self.coordinator, "models", {}) or {}
+        key = models.get(str(self._device_id))
+        return key if key in MODEL_LABELS else None
+
+    @property
     def device_info(self) -> DeviceInfo:
         dev = self._dev
-        model = (dev.get("DeviceModel") or {}).get("name") or "Syncra SDC"
+        model = MODEL_LABELS.get(self.model_key) or (dev.get("DeviceModel") or {}).get("name") or "Syncra SDC"
         return DeviceInfo(
             identifiers={(DOMAIN, str(self._device_id))},
             manufacturer="Sicce",

@@ -4,10 +4,19 @@ from __future__ import annotations
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.helpers import selector
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import SicceApiError, SicceAuthError, SicceClient
-from .const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
+from .const import (
+    CONF_EMAIL,
+    CONF_MODELS,
+    CONF_PASSWORD,
+    DOMAIN,
+    MODEL_LABELS,
+    MODEL_UNKNOWN,
+)
+from .entity import device_display_name
 
 SCHEMA = vol.Schema(
     {
@@ -19,6 +28,10 @@ SCHEMA = vol.Schema(
 
 class SicceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
+
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        return SicceOptionsFlow()
 
     async def async_step_user(self, user_input=None):
         errors: dict[str, str] = {}
@@ -44,4 +57,49 @@ class SicceConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
         return self.async_show_form(
             step_id="user", data_schema=SCHEMA, errors=errors
+        )
+
+
+class SicceOptionsFlow(config_entries.OptionsFlow):
+    """Per-pump model declaration. The Sicce cloud does not report pump
+    size, so the user may declare it; it sets the HA model label and
+    enables an estimated-flow sensor for that pump."""
+
+    async def async_step_init(self, user_input=None):
+        entry = self.config_entry
+        data = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        devices = (data or {}).get("coordinator").data if data else None
+        if not devices:
+            return self.async_abort(reason="no_devices")
+        current = entry.options.get(CONF_MODELS) or {}
+        if user_input is not None:
+            models = {
+                str(device_id): user_input.get(f"model_{device_id}", MODEL_UNKNOWN)
+                for device_id in devices
+            }
+            return self.async_create_entry(title="", data={CONF_MODELS: models})
+        model_options = [{"value": MODEL_UNKNOWN, "label": "Not sure"}] + [
+            {"value": key, "label": label} for key, label in MODEL_LABELS.items()
+        ]
+        schema = {}
+        for device_id in sorted(devices):
+            schema[
+                vol.Optional(
+                    f"model_{device_id}",
+                    default=current.get(str(device_id), MODEL_UNKNOWN),
+                )
+            ] = selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=model_options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            )
+        listing = "; ".join(
+            f"{device_id}: {device_display_name(devices[device_id])}"
+            for device_id in sorted(devices)
+        )
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(schema),
+            description_placeholders={"devices": listing},
         )

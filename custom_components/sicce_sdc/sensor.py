@@ -7,16 +7,20 @@ from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
-from .entity import SicceEntity, device_display_name
+from .const import DOMAIN, MODEL_LABELS, MODEL_MAX_GPH
+from .entity import SicceEntity, device_display_name, live_power
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     data = hass.data[DOMAIN][entry.entry_id]
     entities = []
+    models = getattr(data["coordinator"], "models", {}) or {}
     for device_id in data["coordinator"].data:
         entities.append(SicceTempSensor(data["coordinator"], data["client"], device_id))
         entities.append(SicceModeSensor(data["coordinator"], data["client"], device_id))
+        model_key = models.get(str(device_id))
+        if model_key in MODEL_MAX_GPH:
+            entities.append(SicceFlowSensor(data["coordinator"], data["client"], device_id, model_key))
     async_add_entities(entities)
 
 
@@ -83,4 +87,33 @@ class SicceModeSensor(SicceEntity, SensorEntity):
             "program_status": dev.get("program_status"),
             "eco_mode": dev.get("eco_mode"),
             "pause_mode": dev.get("pause_mode"),
+        }
+
+
+class SicceFlowSensor(SicceEntity, SensorEntity):
+    """Estimated flow: live % of the declared model's rated max flow.
+
+    Only created when the user declared a pump model in the options.
+    An estimate, not a measurement: real flow depends on head height."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "gph"
+    _attr_icon = "mdi:water-pump"
+
+    def __init__(self, coordinator, client, device_id: int, model_key: str):
+        super().__init__(coordinator, client, device_id)
+        self._model_key = model_key
+        self._attr_unique_id = f"sicce_{device_id}_flow_est"
+        self._attr_name = f"{device_display_name(self._dev)} Estimated Flow"
+
+    @property
+    def native_value(self) -> int:
+        return round(live_power(self._dev) * MODEL_MAX_GPH[self._model_key] / 100)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {
+            "model": MODEL_LABELS[self._model_key],
+            "rated_max_gph": MODEL_MAX_GPH[self._model_key],
+            "note": "Estimate from rated max flow at zero head; actual flow depends on plumbing head height.",
         }

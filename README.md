@@ -26,6 +26,14 @@ endpoint: Constant Speed (program 1, mode 0), Night Mode (program 2), and
 the wave modes Lagoonal Ripple, Sharp Break, Reef Crest, Slow Current,
 Fast Current (program 1, modes 1 to 5).
 
+**Pump model (optional):** the Sicce cloud does not report pump size, every
+size identifies as the same platform model. Under the integration's
+**Configure** button you can declare each pump's model (SDC 3.0 / 6.0 / 9.0).
+The declaration sets the model label in Home Assistant and enables an
+**Estimated Flow** sensor for that pump (live % of the model's rated max
+flow at zero head: roughly 800 / 1,450 / 2,500 gph; an estimate, since real
+flow depends on plumbing head height). Undeclared pumps behave as before.
+
 Displayed flow is the pump's LIVE output, read from its mainboard status
 registers (`mb_status[5]`), not the app's setpoint field: a pump set from
 its physical dial reports a stale 0 in the setpoint field while actually

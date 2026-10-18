@@ -17,5 +17,16 @@
     "abort": {
       "already_configured": "This account is already configured."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pump models",
+        "description": "The Sicce cloud does not report pump size. Optionally declare each pump's model: it sets the model label in Home Assistant and enables an estimated-flow sensor for that pump. Pumps: {devices}"
+      }
+    },
+    "abort": {
+      "no_devices": "No pumps are loaded right now. Set up the integration first, then reopen Configure."
+    }
   }
 }
